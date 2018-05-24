@@ -9,7 +9,7 @@ This small utility helps query and follow repositories issues.
 
 ## How to install
 
-    $ go install https://github.com/klassmann/issues.git
+    $ go install github.com/klassmann/issues
 
 ## Usage
 
