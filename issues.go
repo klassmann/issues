@@ -73,7 +73,10 @@ func queryCommand(args []string, conf *Configuration) {
 }
 
 func queriesCommand(args []string, conf *Configuration) {
-
+	fmt.Println("Query list:")
+	for k, v := range conf.Queries {
+		fmt.Printf("\t%s\t%s\n", k, v)
+	}
 }
 
 func parseArguments(args []string, conf *Configuration) {
