@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 const commandLineHelp = `
@@ -28,21 +29,7 @@ queries Show the list of queries in your configuration
 help	Shows this help message
 `
 
-func addCommand() {
-
-}
-
-func listCommand() {
-
-}
-
-func queryCommand(args []string) {
-	result, err := queryIssues(args)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func printQueryIssues(result *IssueQueryResult) {
 	fmt.Printf("%d issues:\n", result.TotalCount)
 
 	for _, item := range result.Items {
@@ -51,25 +38,60 @@ func queryCommand(args []string) {
 	}
 }
 
-func queriesCommand() {
+func addCommand(args []string, conf *Configuration) {
 
 }
 
-func parseArguments(args []string) {
+func listCommand(args []string, conf *Configuration) {
+	if len(args) == 1 {
+		queryName := args[0]
+		query, ok := conf.Queries[queryName]
+		if ok {
+			result, err := queryIssues(strings.Split(query, " "))
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			printQueryIssues(result)
+		} else {
+			fmt.Printf("Query %s is not configured in .issuesrc", queryName)
+		}
+	} else {
+		fmt.Println(commandLineHelp)
+	}
+}
+
+func queryCommand(args []string, conf *Configuration) {
+	result, err := queryIssues(args)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	printQueryIssues(result)
+}
+
+func queriesCommand(args []string, conf *Configuration) {
+
+}
+
+func parseArguments(args []string, conf *Configuration) {
 
 	if len(args) < 2 || args[1] == "help" {
 		fmt.Println(commandLineHelp)
 	} else {
 		var commandArg = args[1]
+		var arguments = args[2:]
 		switch commandArg {
 		case "add":
-			addCommand()
+			addCommand(arguments, conf)
 		case "list":
-			listCommand()
+			listCommand(arguments, conf)
 		case "query":
-			queryCommand(args[2:])
+			queryCommand(arguments, conf)
 		case "queries":
-			queriesCommand()
+			queriesCommand(arguments, conf)
 		}
 	}
 }
@@ -78,5 +100,12 @@ func main() {
 	if !configurationExists() {
 		createConfiguration()
 	}
-	parseArguments(os.Args)
+
+	conf, err := loadConfiguration()
+
+	if err != nil {
+		panic(err)
+	}
+
+	parseArguments(os.Args, conf)
 }

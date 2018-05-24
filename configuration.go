@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -44,8 +45,16 @@ func configurationExists() bool {
 func createConfiguration() error {
 	var conf = Configuration{}
 	conf.Queries = make(Query)
+	return saveConfiguration(&conf)
+}
 
-	data, err := json.MarshalIndent(conf, "", "  ")
+func saveConfiguration(conf *Configuration) error {
+
+	if conf == nil {
+		return fmt.Errorf("save configuration: conf is nil")
+	}
+
+	data, err := json.MarshalIndent(*conf, "", "  ")
 
 	if err != nil {
 		return err
@@ -61,18 +70,18 @@ func createConfiguration() error {
 }
 
 func loadConfiguration() (*Configuration, error) {
-	var conf Configuration
+	var conf = Configuration{}
 
 	data, err := ioutil.ReadFile(getConfigFilename())
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loadConfiguration: reading file: %v", err)
 	}
 
-	err = json.Unmarshal(data, conf)
+	err = json.Unmarshal(data, &conf)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loadConfiguration: json unmarshiling data: %v", err)
 	}
 
 	return &conf, nil
