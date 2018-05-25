@@ -39,7 +39,20 @@ func printQueryIssues(result *IssueQueryResult) {
 }
 
 func addCommand(args []string, conf *Configuration) {
+	if len(args) > 1 {
+		queryName := args[0]
+		query := args[1:]
+		conf.Queries[queryName] = strings.Join(query, " ")
+		err := saveConfiguration(conf)
 
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Printf("Query %s saved.\n", queryName)
+		}
+	} else {
+		fmt.Println(commandLineHelp)
+	}
 }
 
 func listCommand(args []string, conf *Configuration) {
