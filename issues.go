@@ -10,31 +10,45 @@ import (
 	"strings"
 )
 
-const commandLineHelp = `
-Issues help:
+const (
+	helpAdd        string = "add"
+	helpAddDetail  string = "Adds a new query to your local configuration. You need to give a name before the query:"
+	helpAddExample string = `$ issues add [query-name] [query parameters]
+	$ issues add golang repo:golang/go is:open memory`
+	helpList         string = "list"
+	helpListDetail   string = "Query issues from a [query-name] saved in local configuration:"
+	helpListExample  string = `$ issues list [query-name]`
+	helpQuery        string = "query"
+	helpQueryDetail  string = "Queries and shows a new search on github:"
+	helpQueryExample string = `$ issues query [query-parameters]
+	$ issues query repo:golang/go is:open memory`
+	helpQueries        string = "queries"
+	helpQueriesDetail  string = "Show the list of queries in your configuration."
+	helpQueriesExample string = "$ issues queries"
+	helpHelp           string = "help"
+	helpHelpDetail     string = "Shows this help message."
+	helpHelpExample    string = ""
+)
 
-add	Adds a new query to your local configuration. You need to give a name before the query,
-	$ issues add [query-name] [query parameters]
-
-list	Query issues from a [query-name] saved in local configuration
-	$ issues list [query-name]
-
-query	Queries and shows a new search on github.
-	- issues query [query-parameters]
-	$ issues query repo:golang/go is:open memory
-
-queries Show the list of queries in your configuration
-	$ issues queries
-
-help	Shows this help message
-`
+var (
+	termCyan     = TermFormat{FgCyan, AttrBold}
+	termBlue     = TermFormat{FgBlue, AttrBold}
+	termGreen    = TermFormat{FgGreen, AttrBold}
+	termYellow   = TermFormat{FgYellow, AttrReset}
+	termGreenDim = TermFormat{FgGreen, AttrDim}
+	termRed      = TermFormat{FgRed, AttrBold}
+)
 
 func printQueryIssues(result *IssueQueryResult) {
-	fmt.Printf("%d issues:\n", result.TotalCount)
+	termCyan.Printf("%d issues:\n", result.TotalCount)
 
 	for _, item := range result.Items {
-		fmt.Printf("#%-5d %9.9s %.80s\n",
-			item.Number, item.User.Login, item.Title)
+
+		number := termBlue.Quote(fmt.Sprintf("#%-5d", item.Number))
+		login := termGreenDim.Quote(fmt.Sprintf("%9.9s", item.User.Login))
+		title := termYellow.Quote(fmt.Sprintf("%.80s", item.Title))
+
+		fmt.Printf("%s %s %s\n", number, login, title)
 	}
 }
 
@@ -46,12 +60,12 @@ func addCommand(args []string, conf *Configuration) {
 		err := saveConfiguration(conf)
 
 		if err != nil {
-			fmt.Println(err)
+			termRed.Printf("add command: %v", err)
 		} else {
-			fmt.Printf("Query %s saved.\n", queryName)
+			termGreen.Printf("Query %s saved.\n", queryName)
 		}
 	} else {
-		fmt.Println(commandLineHelp)
+		printHelp()
 	}
 }
 
@@ -63,15 +77,15 @@ func listCommand(args []string, conf *Configuration) {
 			result, err := queryIssues(strings.Split(query, " "))
 
 			if err != nil {
-				log.Fatal(err)
+				termRed.Printf("list command: %v", err)
 			}
 
 			printQueryIssues(result)
 		} else {
-			fmt.Printf("Query %s is not configured in .issuesrc", queryName)
+			termRed.Printf("Query %s is not configured in .issuesrc", queryName)
 		}
 	} else {
-		fmt.Println(commandLineHelp)
+		printHelp()
 	}
 }
 
@@ -88,14 +102,15 @@ func queryCommand(args []string, conf *Configuration) {
 func queriesCommand(args []string, conf *Configuration) {
 	fmt.Println("Query list:")
 	for k, v := range conf.Queries {
-		fmt.Printf("\t%s\t%s\n", k, v)
+		fmt.Printf("\t%s\t%s\n", termBlue.Quote(k), termGreen.Quote(v))
 	}
 }
 
 func parseArguments(args []string, conf *Configuration) {
 
 	if len(args) < 2 || args[1] == "help" {
-		fmt.Println(commandLineHelp)
+		//fmt.Println(commandLineHelp)
+		printHelp()
 	} else {
 		var commandArg = args[1]
 		var arguments = args[2:]
@@ -112,7 +127,21 @@ func parseArguments(args []string, conf *Configuration) {
 	}
 }
 
+func formatHelpLine(t, d, e string) string {
+	return fmt.Sprintf("%s\t%s\n\t%s\n", termBlue.Quote(t), termGreen.Quote(d), e)
+}
+
+func printHelp() {
+	fmt.Println(termCyan.Quote("Issues - Usage:\n"))
+	fmt.Println(formatHelpLine(helpAdd, helpAddDetail, helpAddExample))
+	fmt.Println(formatHelpLine(helpList, helpListDetail, helpListExample))
+	fmt.Println(formatHelpLine(helpQuery, helpQueryDetail, helpQueryExample))
+	fmt.Println(formatHelpLine(helpQueries, helpQueriesDetail, helpQueriesExample))
+	fmt.Println(formatHelpLine(helpHelp, helpHelpDetail, helpHelpExample))
+}
+
 func main() {
+
 	if !configurationExists() {
 		createConfiguration()
 	}
@@ -120,7 +149,7 @@ func main() {
 	conf, err := loadConfiguration()
 
 	if err != nil {
-		panic(err)
+		panic(termRed.Quote(fmt.Sprintf("%v", err)))
 	}
 
 	parseArguments(os.Args, conf)
