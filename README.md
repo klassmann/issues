@@ -1,13 +1,11 @@
 # Issues Command Line
 
-This small utility helps query and follow repositories issues.
+This small utility helps querying and following repositories issues.
 
 ![Screenshot](screenshot.png)
 
 ## Requirements
-
 - Golang
-
 
 ## How to install
 
