@@ -48,6 +48,15 @@ Create a `.issuesrc` in your home directory. The file will be created automatica
 
 Note: Each query should have a name and a GitHub issue search string, see more [here](https://developer.github.com/v3/search/#search-issues).
 
+## Features
+
+- [X] Query issues from Github
+- [X] Add, Delete and List queries from local configuration
+- [X] Colorful output
+- [] Github response pagination (Today the number is limited by default from github to 100 items)
+- [] Cache last query responses
+- [] Get more issue details
+
 
 ## Notes
 
