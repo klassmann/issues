@@ -13,20 +13,25 @@ This small utility helps query and follow repositories issues.
 
 ## Usage
 
-    add     Adds a new query to your local configuration. You need to give a name before the query,
+    add	Adds a new query to your local configuration. You need to give a name to the query:
             $ issues add [query-name] [query parameters]
+            $ issues add golang repo:golang/go is:open memory
 
-    list	Query issues from a [query-name] saved in local configuration
+    delete	Deletes a query from your local configuration.
+            $ issues delete [query-name]
+            $ issues delete golang
+
+    list	Query issues from a [query-name] saved in local configuration:
             $ issues list [query-name]
 
-    query	Queries and shows a new search on github.
-            - issues query [query-parameters]
+    query	Queries and shows a new search on github:
+            $ issues query [query-parameters]
             $ issues query repo:golang/go is:open memory
 
-    queries Show the list of queries in your configuration
+    queries	Show the list of queries in your configuration.
             $ issues queries
 
-    help	Shows this help message
+    help	Shows this help message.
 
 
 ## Configuration
