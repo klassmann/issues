@@ -12,9 +12,13 @@ import (
 
 const (
 	helpAdd        string = "add"
-	helpAddDetail  string = "Adds a new query to your local configuration. You need to give a name before the query:"
+	helpAddDetail  string = "Adds a new query to your local configuration. You need to give a name to the query:"
 	helpAddExample string = `$ issues add [query-name] [query parameters]
 	$ issues add golang repo:golang/go is:open memory`
+	helpDelete        string = "delete"
+	helpDeleteDetail  string = "Deletes a query from your local configuration."
+	helpDeleteExample string = `$ issues delete [query-name]
+	$ issues delete golang`
 	helpList         string = "list"
 	helpListDetail   string = "Query issues from a [query-name] saved in local configuration:"
 	helpListExample  string = `$ issues list [query-name]`
@@ -60,9 +64,32 @@ func addCommand(args []string, conf *Configuration) {
 		err := saveConfiguration(conf)
 
 		if err != nil {
-			termRed.Printf("add command: %v", err)
+			termRed.Printf("add command: %v\n", err)
 		} else {
 			termGreen.Printf("Query %s saved.\n", queryName)
+		}
+	} else {
+		printHelp()
+	}
+}
+
+func deleteCommand(args []string, conf *Configuration) {
+	if len(args) == 1 {
+		queryName := args[0]
+
+		_, ok := conf.Queries[queryName]
+
+		if ok {
+			delete(conf.Queries, queryName)
+			err := saveConfiguration(conf)
+
+			if err != nil {
+				termRed.Printf("delete command: %v\n", err)
+			} else {
+				termGreen.Printf("Query %s deleted.\n", queryName)
+			}
+		} else {
+			termRed.Printf("The query %s does not exist.\n", queryName)
 		}
 	} else {
 		printHelp()
@@ -77,12 +104,12 @@ func listCommand(args []string, conf *Configuration) {
 			result, err := queryIssues(strings.Split(query, " "))
 
 			if err != nil {
-				termRed.Printf("list command: %v", err)
+				termRed.Printf("list command: %v\n", err)
 			}
 
 			printQueryIssues(result)
 		} else {
-			termRed.Printf("Query %s is not configured in .issuesrc", queryName)
+			termRed.Printf("Query %s is not configured in .issuesrc\n", queryName)
 		}
 	} else {
 		printHelp()
@@ -107,9 +134,7 @@ func queriesCommand(args []string, conf *Configuration) {
 }
 
 func parseArguments(args []string, conf *Configuration) {
-
 	if len(args) < 2 || args[1] == "help" {
-		//fmt.Println(commandLineHelp)
 		printHelp()
 	} else {
 		var commandArg = args[1]
@@ -117,6 +142,8 @@ func parseArguments(args []string, conf *Configuration) {
 		switch commandArg {
 		case "add":
 			addCommand(arguments, conf)
+		case "delete":
+			deleteCommand(arguments, conf)
 		case "list":
 			listCommand(arguments, conf)
 		case "query":
@@ -134,6 +161,7 @@ func formatHelpLine(t, d, e string) string {
 func printHelp() {
 	fmt.Println(termCyan.Quote("Issues - Usage:\n"))
 	fmt.Println(formatHelpLine(helpAdd, helpAddDetail, helpAddExample))
+	fmt.Println(formatHelpLine(helpDelete, helpDeleteDetail, helpDeleteExample))
 	fmt.Println(formatHelpLine(helpList, helpListDetail, helpListExample))
 	fmt.Println(formatHelpLine(helpQuery, helpQueryDetail, helpQueryExample))
 	fmt.Println(formatHelpLine(helpQueries, helpQueriesDetail, helpQueriesExample))
