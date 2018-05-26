@@ -2,6 +2,8 @@
 
 This small utility helps query and follow repositories issues.
 
+![Screenshot](screenshot.png)
+
 ## Requirements
 
 - Golang
