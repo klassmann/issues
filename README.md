@@ -30,8 +30,7 @@ This small utility helps query and follow repositories issues.
 
 
 ## Configuration
-
-Create a `.issuesrc` in your home directory. Each query should have a name and a GitHub issue search string, see more [here](https://developer.github.com/v3/search/#search-issues). The file will be created automatically on first use.
+Create a `.issuesrc` in your home directory. The file will be created automatically on first use.
 
     {
         "queries": 
@@ -41,6 +40,8 @@ Create a `.issuesrc` in your home directory. Each query should have a name and a
             "django": "repo:django/django is:open"
         }
     }
+
+Note: Each query should have a name and a GitHub issue search string, see more [here](https://developer.github.com/v3/search/#search-issues).
 
 
 ## Notes
