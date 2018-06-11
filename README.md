@@ -1,6 +1,6 @@
 # Issues Command Line
 
-This small utility helps querying and following repositories issues.
+This small utility helps to query and follow repositories issues. The goal is following public repositories, so you do not need permission or an access token. Probably, I will add private repositories support, but now I only want to manage my favorite open source repositories.
 
 ![Screenshot](screenshot.png)
 
@@ -55,7 +55,7 @@ Note: Each query should have a name and a GitHub issue search string, see more [
 - [X] Colorful output
 - [ ] Github response pagination (Today the number is limited by default from github to 100 items)
 - [ ] Cache last query responses
-- [ ] Get more issue details
+- [ ] Get more details from issues
 
 
 ## Notes
