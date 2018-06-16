@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -57,6 +58,7 @@ func printQueryIssues(result *IssueQueryResult) {
 }
 
 func addCommand(args []string, conf *Configuration) {
+
 	if len(args) > 1 {
 		queryName := args[0]
 		query := args[1:]
@@ -74,45 +76,79 @@ func addCommand(args []string, conf *Configuration) {
 }
 
 func deleteCommand(args []string, conf *Configuration) {
-	if len(args) == 1 {
-		queryName := args[0]
-
-		_, ok := conf.Queries[queryName]
-
-		if ok {
-			delete(conf.Queries, queryName)
-			err := saveConfiguration(conf)
-
-			if err != nil {
-				termRed.Printf("delete command: %v\n", err)
-			} else {
-				termGreen.Printf("Query %s deleted.\n", queryName)
-			}
-		} else {
-			termRed.Printf("The query %s does not exist.\n", queryName)
-		}
-	} else {
+	if len(args) != 1 {
 		printHelp()
+		return
+	}
+
+	queryName := args[0]
+	_, ok := conf.Queries[queryName]
+
+	if !ok {
+		termRed.Printf("The query %s does not exist.\n", queryName)
+	}
+
+	delete(conf.Queries, queryName)
+	err := saveConfiguration(conf)
+
+	if err != nil {
+		termRed.Printf("delete command: %v\n", err)
+	} else {
+		termGreen.Printf("Query %s deleted.\n", queryName)
 	}
 }
 
+func getFromCache(query string) (*CacheFile, error) {
+	cache, err := loadCache(query)
+	return cache, err
+}
+
 func listCommand(args []string, conf *Configuration) {
-	if len(args) == 1 {
-		queryName := args[0]
-		query, ok := conf.Queries[queryName]
-		if ok {
-			result, err := queryIssues(strings.Split(query, " "))
-
-			if err != nil {
-				termRed.Printf("list command: %v\n", err)
-			}
-
-			printQueryIssues(result)
-		} else {
-			termRed.Printf("Query %s is not configured in .issuesrc\n", queryName)
-		}
-	} else {
+	if len(args) != 1 {
 		printHelp()
+	}
+
+	queryName := args[0]
+	query, ok := conf.Queries[queryName]
+	var result *IssueQueryResult
+	var err error
+
+	if !ok {
+		termRed.Printf("Query %s is not configured in .issuesrc\n", queryName)
+		return
+	}
+
+	cache, err := getFromCache(queryName)
+	resultFromCache := false
+
+	if err == nil {
+		duration := conf.CacheDuration()
+		cacheLife := time.Now().Sub(cache.Updated)
+
+		fmt.Printf("Duration: %v\n", duration)
+		fmt.Printf("CacheLife: %v\n", cacheLife)
+
+		if cacheLife < duration {
+			fmt.Println("(cache)")
+			result = &cache.Result
+			resultFromCache = true
+		}
+	}
+
+	if !resultFromCache {
+		fmt.Println("(internet)")
+		result, err = queryIssues(strings.Split(query, " "))
+	}
+
+	if err != nil {
+		termRed.Printf("list command: %v\n", err)
+		return
+	}
+
+	printQueryIssues(result)
+	if !resultFromCache {
+		err = saveCache(queryName, result)
+		fmt.Println(err)
 	}
 }
 
@@ -134,23 +170,27 @@ func queriesCommand(args []string, conf *Configuration) {
 }
 
 func parseArguments(args []string, conf *Configuration) {
+
 	if len(args) < 2 || args[1] == "help" {
 		printHelp()
-	} else {
-		var commandArg = args[1]
-		var arguments = args[2:]
-		switch commandArg {
-		case "add":
-			addCommand(arguments, conf)
-		case "delete":
-			deleteCommand(arguments, conf)
-		case "list":
-			listCommand(arguments, conf)
-		case "query":
-			queryCommand(arguments, conf)
-		case "queries":
-			queriesCommand(arguments, conf)
-		}
+		return
+	}
+
+	var commandArg = args[1]
+	var arguments = args[2:]
+	switch commandArg {
+	case "add":
+		addCommand(arguments, conf)
+	case "delete":
+		deleteCommand(arguments, conf)
+	case "list":
+		listCommand(arguments, conf)
+	case "query":
+		queryCommand(arguments, conf)
+	case "queries":
+		queriesCommand(arguments, conf)
+	default:
+		printHelp()
 	}
 }
 
