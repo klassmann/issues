@@ -106,6 +106,7 @@ func getFromCache(query string) (*CacheFile, error) {
 func listCommand(args []string, conf *Configuration) {
 	if len(args) != 1 {
 		printHelp()
+		return
 	}
 
 	queryName := args[0]
@@ -125,18 +126,13 @@ func listCommand(args []string, conf *Configuration) {
 		duration := conf.CacheDuration()
 		cacheLife := time.Now().Sub(cache.Updated)
 
-		fmt.Printf("Duration: %v\n", duration)
-		fmt.Printf("CacheLife: %v\n", cacheLife)
-
 		if cacheLife < duration {
-			fmt.Println("(cache)")
 			result = &cache.Result
 			resultFromCache = true
 		}
 	}
 
 	if !resultFromCache {
-		fmt.Println("(internet)")
 		result, err = queryIssues(strings.Split(query, " "))
 	}
 
@@ -148,7 +144,6 @@ func listCommand(args []string, conf *Configuration) {
 	printQueryIssues(result)
 	if !resultFromCache {
 		err = saveCache(queryName, result)
-		fmt.Println(err)
 	}
 }
 

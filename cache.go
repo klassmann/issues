@@ -28,7 +28,6 @@ func (c *CacheFile) printCache() {
 const cacheFilenamePattern string = "%s.cache"
 
 func getCacheFilename(id string) string {
-	fmt.Println(os.TempDir())
 	return path.Join(os.TempDir(), fmt.Sprintf(cacheFilenamePattern, id))
 }
 
@@ -51,7 +50,7 @@ func loadCache(id string) (*CacheFile, error) {
 
 	var cache CacheFile
 	err = dec.Decode(&cache)
-	cache.printCache()
+	// cache.printCache()
 
 	if err != nil {
 		return nil, fmt.Errorf("reading cache file: %v", err)
@@ -63,7 +62,6 @@ func saveCache(id string, result *IssueQueryResult) error {
 	now := time.Now()
 	cache := CacheFile{ID: id, Result: *result, Updated: now}
 	filename := getCacheFilename(id)
-	fmt.Printf("saving: %s\n", filename)
 	f, err := os.Create(filename)
 	defer f.Close()
 
@@ -71,12 +69,7 @@ func saveCache(id string, result *IssueQueryResult) error {
 		return err
 	}
 
-	// cache.printCache()
-
-	fmt.Println("Opening writer")
 	writer := bufio.NewWriter(f)
-
-	fmt.Println("Opening encoder")
 	enc := gob.NewEncoder(writer)
 	err = enc.Encode(&cache)
 	writer.Flush()
