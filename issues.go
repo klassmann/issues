@@ -44,10 +44,20 @@ var (
 	termRed      = TermFormat{FgRed, AttrBold}
 )
 
-func printQueryIssues(result *IssueQueryResult) {
-	termCyan.Printf("%d issues:\n", result.TotalCount)
+type PrintResult struct {
+	fromCache bool
+	result    *IssueQueryResult
+}
 
-	for _, item := range result.Items {
+func (p *PrintResult) print() {
+
+	if p.fromCache {
+		termCyan.Printf("%d issues loaded from cache:\n", p.result.TotalCount)
+	} else {
+		termCyan.Printf("%d issues loaded from github:\n", p.result.TotalCount)
+	}
+
+	for _, item := range p.result.Items {
 
 		number := termBlue.Quote(fmt.Sprintf("#%-5d", item.Number))
 		login := termGreenDim.Quote(fmt.Sprintf("%9.9s", item.User.Login))
@@ -141,7 +151,9 @@ func listCommand(args []string, conf *Configuration) {
 		return
 	}
 
-	printQueryIssues(result)
+	r := PrintResult{resultFromCache, result}
+	r.print()
+
 	if !resultFromCache {
 		err = saveCache(queryName, result)
 	}
@@ -154,7 +166,8 @@ func queryCommand(args []string, conf *Configuration) {
 		log.Fatal(err)
 	}
 
-	printQueryIssues(result)
+	r := PrintResult{false, result}
+	r.print()
 }
 
 func queriesCommand(args []string, conf *Configuration) {
