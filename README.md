@@ -48,6 +48,21 @@ Create a `.issuesrc` in your home directory. The file will be created automatica
 
 Note: Each query should have a name and a GitHub issue search string, see more [here](https://developer.github.com/v3/search/#search-issues).
 
+Here you have an example with the **cache** option for saving results for 5 minutes:
+```
+    {
+        "queries": 
+        {
+            "sarama": "repo:shopify/sarama is:open",
+            "golang": "repo:golang/go is:open",
+            "django": "repo:django/django is:open"
+        }
+        "cache":"5m"
+    }
+```
+Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+Or you can use "nocache" when you don't want to cache anything.
+
 ## Features
 
 - [X] Query issues from Github
