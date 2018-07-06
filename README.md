@@ -1,6 +1,6 @@
 # Issues Command Line
 
-This small utility helps to query and follow repositories issues. The goal is following public repositories, so you do not need permission or an access token. Probably, I will add private repositories support, but now I only want to manage my favorite open source repositories.
+This small utility helps you for query and follow repositories issues. The goal is following public repositories, so you do not need permission or an access token. Probably, I will add private repositories support, but now I only want to manage my favorite open source repositories.
 
 ![Screenshot](screenshot.png)
 
