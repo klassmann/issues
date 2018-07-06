@@ -1,11 +1,11 @@
 # Issues Command Line
 
-This small utility helps querying and following repositories issues.
+This small utility helps you for query and follow repositories issues.
 
 ![Screenshot](screenshot.png)
 
 ## Requirements
-- Golang
+- [Go](http://golang.org)
 
 ## How to install
 
@@ -53,15 +53,16 @@ Note: Each query should have a name and a GitHub issue search string, see more [
 - [X] Query issues from Github
 - [X] Add, Delete and List queries from local configuration
 - [X] Colorful output
+- [X] Cache last query responses
 - [ ] Github response pagination (Today the number is limited by default from github to 100 items)
-- [ ] Cache last query responses
 - [ ] Get more issue details
+- [ ] Unit tests
 
 
 ## Notes
 
 - Inspired by [The Go Programming Language - Issue example](https://github.com/adonovan/gopl.io/tree/master/ch4/issues)
-
+- Tested with go 1.9.1 darwin/amd64
 
 ## License
 [Apache 2.0](LICENSE)
