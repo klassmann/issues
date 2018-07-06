@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 const (
@@ -43,10 +44,20 @@ var (
 	termRed      = TermFormat{FgRed, AttrBold}
 )
 
-func printQueryIssues(result *IssueQueryResult) {
-	termCyan.Printf("%d issues:\n", result.TotalCount)
+type PrintResult struct {
+	fromCache bool
+	result    *IssueQueryResult
+}
 
-	for _, item := range result.Items {
+func (p *PrintResult) print() {
+
+	if p.fromCache {
+		termCyan.Printf("%d issues loaded from cache:\n", p.result.TotalCount)
+	} else {
+		termCyan.Printf("%d issues loaded from github:\n", p.result.TotalCount)
+	}
+
+	for _, item := range p.result.Items {
 
 		number := termBlue.Quote(fmt.Sprintf("#%-5d", item.Number))
 		login := termGreenDim.Quote(fmt.Sprintf("%9.9s", item.User.Login))
@@ -57,6 +68,7 @@ func printQueryIssues(result *IssueQueryResult) {
 }
 
 func addCommand(args []string, conf *Configuration) {
+
 	if len(args) > 1 {
 		queryName := args[0]
 		query := args[1:]
@@ -74,45 +86,76 @@ func addCommand(args []string, conf *Configuration) {
 }
 
 func deleteCommand(args []string, conf *Configuration) {
-	if len(args) == 1 {
-		queryName := args[0]
-
-		_, ok := conf.Queries[queryName]
-
-		if ok {
-			delete(conf.Queries, queryName)
-			err := saveConfiguration(conf)
-
-			if err != nil {
-				termRed.Printf("delete command: %v\n", err)
-			} else {
-				termGreen.Printf("Query %s deleted.\n", queryName)
-			}
-		} else {
-			termRed.Printf("The query %s does not exist.\n", queryName)
-		}
-	} else {
+	if len(args) != 1 {
 		printHelp()
+		return
+	}
+
+	queryName := args[0]
+	_, ok := conf.Queries[queryName]
+
+	if !ok {
+		termRed.Printf("The query %s does not exist.\n", queryName)
+	}
+
+	delete(conf.Queries, queryName)
+	err := saveConfiguration(conf)
+
+	if err != nil {
+		termRed.Printf("delete command: %v\n", err)
+	} else {
+		termGreen.Printf("Query %s deleted.\n", queryName)
 	}
 }
 
+func getFromCache(query string) (*CacheFile, error) {
+	cache, err := loadCache(query)
+	return cache, err
+}
+
 func listCommand(args []string, conf *Configuration) {
-	if len(args) == 1 {
-		queryName := args[0]
-		query, ok := conf.Queries[queryName]
-		if ok {
-			result, err := queryIssues(strings.Split(query, " "))
-
-			if err != nil {
-				termRed.Printf("list command: %v\n", err)
-			}
-
-			printQueryIssues(result)
-		} else {
-			termRed.Printf("Query %s is not configured in .issuesrc\n", queryName)
-		}
-	} else {
+	if len(args) != 1 {
 		printHelp()
+		return
+	}
+
+	queryName := args[0]
+	query, ok := conf.Queries[queryName]
+	var result *IssueQueryResult
+	var err error
+
+	if !ok {
+		termRed.Printf("Query %s is not configured in .issuesrc\n", queryName)
+		return
+	}
+
+	cache, err := getFromCache(queryName)
+	resultFromCache := false
+
+	if err == nil {
+		duration := conf.CacheDuration()
+		cacheLife := time.Now().Sub(cache.Updated)
+
+		if cacheLife < duration {
+			result = &cache.Result
+			resultFromCache = true
+		}
+	}
+
+	if !resultFromCache {
+		result, err = queryIssues(strings.Split(query, " "))
+	}
+
+	if err != nil {
+		termRed.Printf("list command: %v\n", err)
+		return
+	}
+
+	r := PrintResult{resultFromCache, result}
+	r.print()
+
+	if !resultFromCache {
+		err = saveCache(queryName, result)
 	}
 }
 
@@ -123,7 +166,8 @@ func queryCommand(args []string, conf *Configuration) {
 		log.Fatal(err)
 	}
 
-	printQueryIssues(result)
+	r := PrintResult{false, result}
+	r.print()
 }
 
 func queriesCommand(args []string, conf *Configuration) {
@@ -134,23 +178,27 @@ func queriesCommand(args []string, conf *Configuration) {
 }
 
 func parseArguments(args []string, conf *Configuration) {
+
 	if len(args) < 2 || args[1] == "help" {
 		printHelp()
-	} else {
-		var commandArg = args[1]
-		var arguments = args[2:]
-		switch commandArg {
-		case "add":
-			addCommand(arguments, conf)
-		case "delete":
-			deleteCommand(arguments, conf)
-		case "list":
-			listCommand(arguments, conf)
-		case "query":
-			queryCommand(arguments, conf)
-		case "queries":
-			queriesCommand(arguments, conf)
-		}
+		return
+	}
+
+	var commandArg = args[1]
+	var arguments = args[2:]
+	switch commandArg {
+	case "add":
+		addCommand(arguments, conf)
+	case "delete":
+		deleteCommand(arguments, conf)
+	case "list":
+		listCommand(arguments, conf)
+	case "query":
+		queryCommand(arguments, conf)
+	case "queries":
+		queriesCommand(arguments, conf)
+	default:
+		printHelp()
 	}
 }
 

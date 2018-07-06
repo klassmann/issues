@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
-	"runtime"
+	"time"
 )
 
 const defaultFileName string = ".issuesrc"
@@ -16,18 +15,23 @@ type Query map[string]string
 
 // Configuration struct
 type Configuration struct {
-	Queries Query `json:"queries"`
+	Queries Query  `json:"queries"` // Queries is a dictionary of queries and query commands
+	Cache   string `json:"cache"`   // Cache is the duration of the cache, use nocache to no use this feature
 }
 
-func userHome() string {
-	if runtime.GOOS == "windows" {
-		home := os.Getenv("HOMEDRIVE") + os.Getenv("HOMEPATH")
-		if home == "" {
-			home = os.Getenv("USERPROFILE")
-		}
-		return home
+// CacheDuration parses Cache configuration
+// and returns the duration as time.Duration
+func (c *Configuration) CacheDuration() time.Duration {
+	if c.Cache == "nocache" {
+		return time.Duration(0)
 	}
-	return os.Getenv("HOME")
+
+	d, err := time.ParseDuration(c.Cache)
+
+	if err != nil {
+		return time.Duration(0)
+	}
+	return d
 }
 
 func getConfigFilename() string {
@@ -35,11 +39,7 @@ func getConfigFilename() string {
 }
 
 func configurationExists() bool {
-	_, err := os.Stat(getConfigFilename())
-	if err != nil {
-		return !os.IsNotExist(err)
-	}
-	return true
+	return fileExists(getConfigFilename())
 }
 
 func createConfiguration() error {
