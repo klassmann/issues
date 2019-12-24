@@ -33,11 +33,22 @@ type Issue struct {
 type IssueQueryResult struct {
 	TotalCount int `json:"total_count"`
 	Items      []*Issue
+	NextPage   string
+	LastPage   string
+}
+
+func (i *IssueQueryResult) addLink(s string) {
+	if strings.Contains(s, "next") {
+		i.NextPage = s
+	} else if strings.Contains(s, "last") {
+		i.LastPage = s
+	}
 }
 
 func httpGet(terms []string) (*http.Response, error) {
 	q := url.QueryEscape(strings.Join(terms, " "))
 	resp, err := http.Get(IssueURL + "?q=" + q)
+
 	if err != nil {
 		resp.Body.Close()
 		return nil, err
@@ -51,8 +62,14 @@ func httpGet(terms []string) (*http.Response, error) {
 	return resp, nil
 }
 
+func tryPaginationLinks(r *http.Response) []string {
+	l := r.Header.Get("Link")
+	return strings.Split(l, ",")
+}
+
 func queryIssues(terms []string) (*IssueQueryResult, error) {
 	resp, err := httpGet(terms)
+
 	if err != nil {
 		return nil, err
 	}
@@ -60,6 +77,13 @@ func queryIssues(terms []string) (*IssueQueryResult, error) {
 	defer resp.Body.Close()
 
 	var result IssueQueryResult
+
+	// Add pagination links
+	links := tryPaginationLinks(resp)
+	for i := 0; i < len(links); i++ {
+		result.addLink(links[i])
+	}
+
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, err
 	}
